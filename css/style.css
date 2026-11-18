@@ -282,6 +282,14 @@ body.pv-open .stage-caption { opacity: 0; }
   -webkit-user-select: none; user-select: none;
 }
 .rack__viewport.is-dragging { cursor: grabbing; }
+
+/* Rayon sans article */
+.rack__empty {
+  display: none; position: absolute; z-index: 3; left: 50%; top: 40%; transform: translate(-50%, -50%); margin: 0;
+  padding: 12px 20px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.85);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
+}
+.rack.is-empty .rack__empty { display: block; }
 .rack__track { position: absolute; inset: 0; }
 
 /* Un article suspendu : li (position) > depth (recul) > sway (inertie) > swing (survol) */

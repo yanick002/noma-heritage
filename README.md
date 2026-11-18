@@ -38,8 +38,7 @@ assets/products/boubou-indigo/
 Pour un bon rendu :
 
 - **PNG ou WebP détouré, fond transparent**, vêtement à plat et **sans cintre** (le site dessine le cintre lui-même). Le WebP est 5 à 10 fois plus léger qu'un PNG : c'est le format des vêtements actuels. Pour détourer une photo : [remove.bg](https://www.remove.bg), ou l'outil « Supprimer l'arrière-plan » de Canva ou de l'iPhone.
-- **Vêtements** : format portrait **4:5** (par ex. 1200 × 1500 px), le col centré et collé en haut de l'image. Pour une jupe ou un pantalon, la ceinture doit toucher le haut de l'image.
-- **Chaussures, sacs, accessoires** : format paysage **5:4** (par ex. 1500 × 1200 px), l'objet posé en bas de l'image.
+- **Format** : portrait **4:5** (par ex. 1200 × 1500 px), le col centré et collé en haut de l'image. Pour une jupe ou un pantalon, la ceinture doit toucher le haut de l'image.
 - Visez un poids de 150 à 300 Ko par image (compressez sur [squoosh.app](https://squoosh.app) ou [tinypng.com](https://tinypng.com)).
 
 ### 2. L'entrée dans `js/products.js`
@@ -50,7 +49,7 @@ Copiez un produit existant dans le tableau `PRODUCTS` et adaptez-le :
 {
   id: "boubou-indigo",            // = nom du dossier d'images
   name: "Boubou Indigo",
-  category: "vetements",          // vetements | accessoires | chaussures | sacs
+  category: "hauts",              // l'id d'un rayon : hauts | gilets | pantalons | jupes…
   price: 35000,                   // en FCFA, sans espace
   colors: [
     { name: "Indigo", hex: "#2b3a67", front: "assets/products/boubou-indigo/front-indigo.png", back: "assets/products/boubou-indigo/back-indigo.png" },
@@ -69,9 +68,17 @@ Champs facultatifs :
 - `worn: "assets/products/…/worn-indigo.png"` dans une couleur : ajoute un bouton **Porté**, pour une photo du vêtement porté.
 - `hanger: "pince"` : cintre à pinces, à utiliser pour les jupes et les pantalons.
 
-Rangement automatique : les `vetements` vont sur le portant, tout le reste sur l'étagère murale. Respectez bien les virgules entre les produits.
+Respectez bien les virgules entre les produits.
 
-> Les vêtements utilisent vos vraies photos, détourées et sans le filigrane TikTok. Les sacs, chaussures et accessoires, ainsi que les silhouettes du lookbook, sont encore des visuels **provisoires** (`.svg`) : remplacez-les par vos photos en changeant simplement les chemins dans `products.js`.
+> Les vêtements utilisent vos vraies photos, détourées et sans le filigrane TikTok. Les silhouettes du lookbook sont encore des visuels **provisoires** (`.svg`) : remplacez-les par vos photos en changeant simplement les chemins dans `products.js`.
+
+### Rayons (onglets de la pilule)
+
+Les rayons se règlent en haut de `js/products.js`, dans `CATEGORIES` : **Tout · Hauts · Gilets · Pantalons · Jupes**. Le rayon `tout` affiche toute la collection.
+
+- Pour **ajouter un rayon**, par exemple les robes, ajoutez la ligne `{ id: "robes", label: "Robes" }` et donnez `category: "robes"` aux produits concernés.
+- Tous les vêtements sont suspendus au portant. Quand un rayon a peu de pièces, le portant devient fixe et centré, au lieu de tourner en boucle.
+- Pour vendre plus tard des sacs, des chaussures ou des accessoires, ajoutez un rayon avec `etagere: true`, par exemple `{ id: "sacs", label: "Sacs", etagere: true }` : ses articles seront posés sur l'étagère murale. Les images de ces objets sont alors au format paysage **5:4**, l'objet posé en bas de l'image.
 
 ### Looks
 

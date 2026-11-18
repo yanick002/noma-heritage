@@ -21,16 +21,8 @@
   const WHATSAPP_NUMBER = '2250700000000';
 
   const CART_STORAGE_KEY = 'noma-heritage-panier-v1';
-  const DEFAULT_SCENE = 'vetements';
-  const SCENE_ORDER = ['boutique', 'vetements', 'accessoires', 'sacs', 'chaussures'];
-  const CATEGORY_LABELS = {
-    boutique: 'Boutique',
-    vetements: 'Vêtements',
-    accessoires: 'Accessoires',
-    sacs: 'Sacs',
-    chaussures: 'Chaussures',
-  };
   const DECOR = ['assets/decor/vase.svg', 'assets/decor/livres.svg', 'assets/decor/plante.svg'];
+  // Les rayons (onglets) sont définis dans js/products.js (constante CATEGORIES).
 
   /* ========================================================================
      2. GSAP (avec repli statique si le CDN est indisponible)
@@ -146,7 +138,23 @@
   const CATALOGUE = typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS) ? PRODUCTS.filter(validProduct) : [];
   const BY_ID = new Map(CATALOGUE.map((p) => [p.id, p]));
   const getProduct = (id) => BY_ID.get(id);
-  const isGarment = (p) => p.category === 'vetements';
+
+  /* ---- Rayons (onglets de la pilule) ---- */
+  const ALL = 'tout'; // rayon qui affiche toute la collection
+  const CATEGORY_LIST = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES) && CATEGORIES.length
+    ? CATEGORIES
+    : [{ id: ALL, label: 'Tout' }]).filter((c) => c && c.id && c.label);
+  const CATEGORY_LABELS = Object.fromEntries(CATEGORY_LIST.map((c) => [c.id, c.label]));
+  const SCENE_ORDER = CATEGORY_LIST.map((c) => c.id);
+  const DEFAULT_SCENE = SCENE_ORDER[0];
+  // Un rayon marqué { etagere: true } (accessoires, chaussures…) s'affiche sur l'étagère murale
+  const SHELF_CATS = new Set(CATEGORY_LIST.filter((c) => c.etagere).map((c) => c.id));
+  const isGarment = (p) => !SHELF_CATS.has(p.category);
+  const RACK_PRODUCTS = CATALOGUE.filter(isGarment);
+  const SHELF_PRODUCTS = CATALOGUE.filter((p) => !isGarment(p));
+  CATALOGUE.forEach((p) => {
+    if (!CATEGORY_LABELS[p.category]) console.warn(`[Noma Heritage] Rayon inconnu « ${p.category} » pour ${p.id} : ajoutez-le à CATEGORIES dans products.js.`);
+  });
   const LOOK_LIST = typeof LOOKS !== 'undefined' && Array.isArray(LOOKS) ? LOOKS.filter((l) => l && l.image) : [];
 
   function colorIndexOf(p, name) {
@@ -242,17 +250,30 @@
       this.el = $('#stage-caption');
       this.inner = $('.stage-caption__inner', this.el);
     },
+    /** Indication par défaut : « Glissez » seulement si le portant défile. */
+    hint() {
+      const r = activeRack();
+      const scrolls = !r || r.loop;
+      if (isTouch()) return scrolls ? 'Glissez · Touchez une pièce' : 'Touchez une pièce pour la découvrir';
+      return scrolls ? 'Glissez pour parcourir · Cliquez pour découvrir' : 'Cliquez sur une pièce pour la découvrir';
+    },
+    /** Réaffiche l'indication (après un changement de rayon). */
+    refresh() {
+      if (this.current) return;
+      this.current = undefined;
+      this.show(null);
+    },
     show(p) {
       if (p === this.current) return;
       this.current = p;
-      const html = p
-        ? `<span class="stage-caption__name">${esc(p.name)}</span>
-           <span class="stage-caption__price">${formatPrice(p.price)}${p.isNew ? ' · <span class="stage-caption__new">Nouveau</span>' : ''}</span>`
-        : `<span class="stage-caption__hint">${isTouch() ? 'Glissez · Touchez une pièce' : 'Glissez pour parcourir · Cliquez pour découvrir'}</span>`;
       gsap.killTweensOf(this.inner);
       gsap.to(this.inner, {
         opacity: 0, y: reduced() ? 0 : -6, duration: 0.14, ease: 'power1.in',
         onComplete: () => {
+          const html = p
+            ? `<span class="stage-caption__name">${esc(p.name)}</span>
+               <span class="stage-caption__price">${formatPrice(p.price)}${p.isNew ? ' · <span class="stage-caption__new">Nouveau</span>' : ''}</span>`
+            : `<span class="stage-caption__hint">${this.hint()}</span>`;
           this.inner.innerHTML = html;
           gsap.fromTo(this.inner, { opacity: 0, y: reduced() ? 0 : 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
         },
@@ -289,10 +310,15 @@
       this.focused = false;
       this.dirty = true;
 
+      this.loop = true;      // boucle infinie, ou portant fixe et centré s'il y a peu d'articles
+      this.base = 0;         // position du portant fixe
+      this.cursor = 0;       // article sélectionné au clavier (portant fixe)
+
       root.innerHTML = `<div class="rack__rail" aria-hidden="true"></div>
         <div class="rack__viewport" tabindex="0" role="group" aria-roledescription="portant" aria-label="${esc(label)}">
           <ul class="rack__track"></ul>
-        </div>`;
+        </div>
+        <p class="rack__empty">Bientôt disponible</p>`;
       this.rail = $('.rack__rail', root);
       this.viewport = $('.rack__viewport', root);
       this.track = $('.rack__track', root);
@@ -300,10 +326,24 @@
       this.bindKeys();
     }
 
+    /** Change les articles suspendus (changement de rayon). */
+    setProducts(products) {
+      if (products.length === this.products.length && products.every((p, i) => p === this.products[i])) return;
+      this.products = products;
+      this.copies = 0;   // force la reconstruction au prochain measure()
+      this.W = 0;        // force le recentrage
+      this.centerK = 0;
+      this.cursor = 0;
+      this.hovered = null;
+      this.root.classList.toggle('is-empty', !products.length);
+      if (!products.length) { this.track.innerHTML = ''; this.items = []; }
+    }
+
     /** Calcule la taille des vêtements selon la place disponible. */
     measure() {
       const h = this.root.clientHeight;
       const vw = this.root.clientWidth;
+      this.root.classList.toggle('is-empty', !this.products.length);
       if (!h || !vw || !this.products.length) return false;
       const railY = parseFloat(getComputedStyle(this.root).getPropertyValue('--rail-y')) || 26;
       const portrait = window.innerHeight > window.innerWidth * 1.05;
@@ -318,12 +358,21 @@
       this.spacing = W + gap;
       this.root.style.setProperty('--g-w', W + 'px');
 
-      // Assez de copies pour boucler sans trou, quelle que soit la largeur d'écran
+      // Peu d'articles qui tiennent à l'écran : portant fixe et centré.
+      // Sinon : boucle infinie, avec assez de copies pour ne jamais voir de trou.
       const n = this.products.length;
-      const copies = Math.max(1, Math.ceil((vw + 2 * this.spacing) / (n * this.spacing)));
+      const wasLoop = this.loop;
+      this.loop = n * this.spacing > vw * 0.85;
+      const copies = this.loop ? Math.max(1, Math.ceil((vw + 2 * this.spacing) / (n * this.spacing))) : 1;
       if (copies !== this.copies) { this.copies = copies; this.build(); }
       this.total = this.items.length * this.spacing;
-      if (changed) this.target = this.offset = this.last = this.centerOffset(this.centerK || 0);
+      if (!this.loop) {
+        this.base = (vw - (n * this.spacing - gap)) / 2;
+        this.target = this.offset = this.last = this.base;
+        this.cursor = clamp(this.cursor, 0, n - 1);
+      } else if (changed || !wasLoop) {
+        this.target = this.offset = this.last = this.centerOffset(this.centerK || 0);
+      }
       this.dirty = true;
       return true;
     }
@@ -428,7 +477,8 @@
         vel = vel * 0.6 + ((e.clientX - lastX) / dt) * 0.4; // px/ms, lissé
         lastX = e.clientX;
         lastT = now;
-        this.target = startTarget + dx;
+        // Portant fixe : léger effet élastique seulement
+        this.target = this.loop ? startTarget + dx : this.base + dx * 0.25;
       });
 
       const end = (e) => {
@@ -437,9 +487,13 @@
         if (!moved) return;
         this.dragging = false;
         vp.classList.remove('is-dragging');
-        if (performance.now() - lastT > 90) vel = 0; // l'utilisateur s'est arrêté avant de relâcher
-        this.target += clamp(vel, -4, 4) * 340;     // inertie
-        if (this.shouldSnap()) this.snap();
+        if (!this.loop) {
+          this.target = this.base; // le portant fixe revient en place
+        } else {
+          if (performance.now() - lastT > 90) vel = 0; // l'utilisateur s'est arrêté avant de relâcher
+          this.target += clamp(vel, -4, 4) * 340;     // inertie
+          if (this.shouldSnap()) this.snap();
+        }
         this.suppressClick = true;
         setTimeout(() => { this.suppressClick = false; }, 0);
       };
@@ -449,7 +503,7 @@
 
       vp.addEventListener('wheel', (e) => {
         const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
-        if (!d || this.dimmed) return;
+        if (!d || this.dimmed || !this.loop) return;
         e.preventDefault();
         this.target -= d * (e.deltaMode === 1 ? 32 : 1);
         if (this.shouldSnap()) {
@@ -476,14 +530,25 @@
     }
 
     shouldSnap() { return isMobile() || isTouch(); }
-    centerOffset(K) { return (this.vw - this.W) / 2 - K * this.spacing; }
-    currentK() { return Math.round(((this.vw - this.W) / 2 - this.target) / this.spacing); }
+    centerOffset(K) { return this.loop ? (this.vw - this.W) / 2 - K * this.spacing : this.base; }
+    currentK() { return this.loop ? Math.round(((this.vw - this.W) / 2 - this.target) / this.spacing) : this.cursor; }
     itemAtK(K) { return this.items[mod(K, this.items.length)]; }
-    snap() { this.target = this.centerOffset(this.currentK()); }
-    step(dir) { this.target = this.centerOffset(this.currentK() + dir); }
+    snap() { this.target = this.loop ? this.centerOffset(this.currentK()) : this.base; }
+    step(dir) {
+      if (this.loop) { this.target = this.centerOffset(this.currentK() + dir); return; }
+      this.cursor = clamp(this.cursor + dir, 0, this.items.length - 1); // portant fixe : on déplace la sélection
+      this.updateCurrent(true);
+    }
+
+    /** Position horizontale d'un article (avec ou sans boucle). */
+    xOf(it) {
+      const sp = this.spacing;
+      return this.loop ? mod(it.k * sp + this.offset + sp, this.total) - sp : it.k * sp + this.offset;
+    }
 
     /** Fait venir un produit au centre par le plus court chemin. Retourne l'élément concerné. */
     centerOn(index) {
+      if (!this.loop) { this.cursor = index; this.updateCurrent(true); return this.items[index]; }
       const n = this.products.length;
       const K0 = this.currentK();
       let d = mod(index - K0, n);
@@ -495,7 +560,7 @@
     /** Met en avant l'article centré (clavier, tactile). */
     updateCurrent(force) {
       if (!this.items.length) return;
-      const K = Math.round(((this.vw - this.W) / 2 - this.offset) / this.spacing);
+      const K = this.loop ? Math.round(((this.vw - this.W) / 2 - this.offset) / this.spacing) : this.cursor;
       if (K === this.centerK && !force) return;
       this.centerK = K;
       const cur = this.itemAtK(K);
@@ -530,11 +595,9 @@
     }
 
     render() {
-      const sp = this.spacing;
-      const total = this.total;
       for (let i = 0; i < this.items.length; i++) {
         const it = this.items[i];
-        const x = mod(it.k * sp + this.offset + sp, total) - sp;
+        const x = this.xOf(it);
         it.el.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
         it.sway.style.transform = this.sway ? `rotate(${(this.sway * it.mult).toFixed(3)}deg)` : '';
       }
@@ -602,7 +665,7 @@
       this.settle();
       const visible = [];
       this.items.forEach((it) => {
-        const x = mod(it.k * this.spacing + this.offset + this.spacing, this.total) - this.spacing;
+        const x = this.xOf(it);
         if (x > -this.W && x < this.vw) { it._x = x; visible.push(it); }
         else gsap.set(it.swing, { opacity: 1 });
       });
@@ -727,7 +790,20 @@
   let heroVisible = true;
   let lastMobile = isMobile();
 
-  const sceneKey = (cat) => (cat === 'vetements' ? 'vetements' : cat === 'boutique' ? 'boutique' : 'shelf');
+  /**
+   * Scène à afficher pour un rayon :
+   * - 'rack'     : le portant (vêtements), filtré par rayon ;
+   * - 'shelf'    : l'étagère murale (rayons marqués etagere: true) ;
+   * - 'boutique' : portant + étagère côte à côte (rayon « Tout » quand il y a des deux).
+   */
+  function sceneKey(cat) {
+    if (cat === ALL) {
+      if (RACK_PRODUCTS.length && SHELF_PRODUCTS.length) return 'boutique';
+      return RACK_PRODUCTS.length ? 'rack' : 'shelf';
+    }
+    return SHELF_CATS.has(cat) ? 'shelf' : 'rack';
+  }
+  const productsOf = (cat, list) => (cat === ALL ? list : list.filter((p) => p.category === cat));
 
   const SCENE_EVENTS = {
     onHover: (p) => caption.show(p),
@@ -745,10 +821,9 @@
   }
 
   function setupScenes() {
-    const garments = CATALOGUE.filter(isGarment);
-    scenes.vetements = {
+    scenes.rack = {
       el: $('#scene-vetements'),
-      rack: renderRack($('#rack-main'), garments, 'Portant des vêtements. Flèches gauche et droite pour parcourir, Entrée pour ouvrir.'),
+      rack: renderRack($('#rack-main'), RACK_PRODUCTS, 'Portant. Flèches gauche et droite pour parcourir, Entrée pour ouvrir.'),
     };
     scenes.shelf = {
       el: $('#scene-shelf'),
@@ -756,7 +831,7 @@
     };
     scenes.boutique = {
       el: $('#scene-boutique'),
-      rack: renderRack($('#rack-boutique'), garments, 'Portant de la boutique. Flèches gauche et droite pour parcourir, Entrée pour ouvrir.'),
+      rack: renderRack($('#rack-boutique'), RACK_PRODUCTS, 'Portant de la boutique. Flèches gauche et droite pour parcourir, Entrée pour ouvrir.'),
       shelf: renderShelf($('#shelf-boutique')),
     };
     const stage = $('#stage');
@@ -764,29 +839,37 @@
     stage.setAttribute('aria-label', 'Rayon affiché');
   }
 
-  function shelfLayout(cat, n) {
-    if (cat === 'boutique') {
+  function shelfLayout(key, n) {
+    if (key === 'boutique') {
       return isMobile() ? { cols: 3, rows: Math.max(1, Math.ceil(n / 3)) } : { cols: 2, rows: Math.max(2, Math.ceil(n / 2)) };
     }
     return isMobile() ? { cols: 2, rows: Math.max(2, Math.ceil(n / 2)) } : { cols: 3, rows: Math.max(2, Math.ceil(n / 3)) };
   }
 
   function populateShelf(cat) {
-    const s = scenes[sceneKey(cat)];
+    const key = sceneKey(cat);
+    const s = scenes[key];
     if (!s.shelf) return;
-    const list = cat === 'boutique' ? CATALOGUE.filter((p) => !isGarment(p)) : CATALOGUE.filter((p) => p.category === cat);
-    s.shelf.render(list, { ...shelfLayout(cat, list.length), label: `Étagère ${CATEGORY_LABELS[cat]}` });
+    const list = productsOf(cat, SHELF_PRODUCTS);
+    s.shelf.render(list, { ...shelfLayout(key, list.length), label: `Étagère ${CATEGORY_LABELS[cat]}` });
+  }
+
+  /** Remplit la scène avec les articles du rayon choisi. */
+  function populateScene(cat) {
+    if (sceneKey(cat) === 'rack') scenes.rack.rack.setProducts(productsOf(cat, RACK_PRODUCTS));
+    populateShelf(cat);
   }
 
   function activateScene(cat) {
     const s = scenes[sceneKey(cat)];
     s.el.hidden = false;
-    populateShelf(cat);
+    populateScene(cat);
     if (s.rack) {
       s.rack.active = true;
       s.rack.measure();
       s.rack.settle();
     }
+    caption.refresh();
   }
 
   function deactivateScene(key) {
@@ -822,7 +905,7 @@
     const dir = prevCat ? Math.sign(SCENE_ORDER.indexOf(cat) - SCENE_ORDER.indexOf(prevCat)) || 1 : 1;
 
     // Le grand titre se décale un peu : effet de profondeur quand on « marche » dans la boutique
-    const shift = (SCENE_ORDER.indexOf(cat) - SCENE_ORDER.indexOf(DEFAULT_SCENE)) * (isMobile() ? -5 : -12);
+    const shift = isMobile() ? 0 : (SCENE_ORDER.indexOf(cat) - SCENE_ORDER.indexOf(DEFAULT_SCENE)) * -8;
     gsap.to('.hero__title-wrap', { x: reduced() ? 0 : shift, duration: instant ? 0 : 1.2, ease: 'power3.inOut' });
 
     if (!prevEl || instant) {
@@ -854,6 +937,9 @@
   /* ---- Pilule de navigation ---- */
   function initCatnav() {
     const nav = $('#catnav');
+    // Un onglet par rayon défini dans products.js
+    $('.catnav__track', nav).insertAdjacentHTML('beforeend', CATEGORY_LIST.map((c) =>
+      `<button class="catnav__tab" type="button" role="tab" data-cat="${esc(c.id)}" aria-selected="false" aria-controls="stage">${esc(c.label)}</button>`).join(''));
     const tabs = $$('.catnav__tab', nav);
     tabs.forEach((tab) => tab.addEventListener('click', () => goToCategory(tab.dataset.cat)));
     nav.addEventListener('keydown', (e) => {
@@ -1869,7 +1955,7 @@
       // Sur ordinateur, la molette fait aussi glisser le portant pendant qu'on quitte le hero
       if (dy && !isTouch() && !reduced() && y < hero.offsetHeight && !pv.open) {
         const r = activeRack();
-        if (r && !r.dimmed) r.target -= dy * 0.5;
+        if (r && !r.dimmed && r.loop) r.target -= dy * 0.5;
       }
     }, { passive: true });
 
@@ -1879,19 +1965,23 @@
   }
 
   function intro() {
-    const rack = scenes.vetements.rack;
+    const rack = activeRack();
     const cap = $('#stage-caption');
     const nav = $('#catnav');
     if (reduced()) {
       gsap.fromTo(['#hero-title', '#stage', cap, nav], { opacity: 0 }, { opacity: 1, duration: 0.8, stagger: 0.1, clearProps: 'opacity' });
       return;
     }
-    rack.prepEntrance();
-    gsap.timeline({ delay: 0.1 })
+    const tl = gsap.timeline({ delay: 0.1 })
       .fromTo('.hero__char', { yPercent: 115 }, { yPercent: 0, duration: 1.1, ease: 'power4.out', stagger: 0.04 }, 0)
-      .fromTo(rack.rail, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 1.2, ease: 'power3.inOut', clearProps: 'transform' }, 0.25)
-      .add(() => rack.entrance(), 0.8)
       .fromTo([cap, nav], { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.1, clearProps: 'transform,opacity' }, 1.2);
+    if (rack) {
+      rack.prepEntrance();
+      tl.fromTo(rack.rail, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 1.2, ease: 'power3.inOut', clearProps: 'transform' }, 0.25)
+        .add(() => rack.entrance(), 0.8);
+    } else {
+      sceneEntrance(sceneKey(currentCat));
+    }
   }
 
   /* ========================================================================
@@ -1905,6 +1995,7 @@
       populateShelf(currentCat);
     }
     Object.values(scenes).forEach((s) => { if (s.rack && s.rack.active) s.rack.measure(); });
+    caption.refresh();
     moveIndicator(true);
     if (pv.open) sizeFigure();
   }, 120);
