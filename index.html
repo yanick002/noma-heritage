@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Noma Heritage — Le showroom</title>
+  <meta name="description" content="Noma Heritage : vêtements en lin imprimés de nos trois masques, sacs, chaussures et accessoires. Visitez le showroom en ligne et commandez sur WhatsApp.">
+  <meta name="theme-color" content="#F0F0EE">
+  <link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
+
+  <!-- Open Graph / réseaux sociaux (adresses complètes du site en ligne) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Noma Heritage">
+  <meta property="og:url" content="https://noma-heritage.vercel.app/">
+  <meta property="og:title" content="Noma Heritage — Le showroom">
+  <meta property="og:description" content="Vêtements en lin imprimés de nos trois masques. Visitez le showroom et commandez sur WhatsApp.">
+  <meta property="og:image" content="https://noma-heritage.vercel.app/assets/og-image.png">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#boutique">Aller à la boutique</a>
+
+  <!-- Dégradés partagés par les SVG du site (cintres, portant) -->
+  <svg class="svg-defs" aria-hidden="true" focusable="false" width="0" height="0">
+    <defs>
+      <linearGradient id="g-hook" x1="0" x2="1">
+        <stop offset="0" stop-color="#6f6f6f"/><stop offset=".45" stop-color="#d9d9d9"/><stop offset="1" stop-color="#7a7a7a"/>
+      </linearGradient>
+      <linearGradient id="g-bar" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="#3a3a3a"/><stop offset=".5" stop-color="#151515"/><stop offset="1" stop-color="#050505"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ===================== EN-TÊTE ===================== -->
+  <header class="header" id="header">
+    <div class="header__side" aria-hidden="true"></div>
+    <a class="brand" href="#boutique" aria-label="Noma Heritage, retour en haut">
+      <!-- Logo : remplacez assets/logo/embleme.svg par votre fichier (PNG ou SVG) -->
+      <img class="brand__logo" src="assets/logo/embleme.svg" alt="" width="32" height="34">
+      <span class="brand__text">
+        <span class="brand__name">NOMA HERITAGE</span>
+        <span class="brand__baseline">Prêt-à-porter · Trois masques</span>
+      </span>
+    </a>
+    <div class="header__side header__actions">
+      <button class="icon-btn" id="search-open" type="button" aria-label="Rechercher" aria-controls="search" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+      </button>
+      <button class="icon-btn cart-btn" id="cart-open" type="button" aria-label="Ouvrir le panier, 0 article" aria-controls="cart" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.1 12.1a1 1 0 0 1-1 .9H7.1a1 1 0 0 1-1-.9L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+        <span class="cart-btn__badge" id="cart-badge" aria-hidden="true">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================== HERO + SHOWROOM ===================== -->
+    <section class="hero" id="boutique" aria-label="Showroom">
+      <div class="hero__title-wrap">
+        <h1 class="hero__title" id="hero-title"><span class="hero__word">NOMA</span> <span class="hero__word">HERITAGE</span></h1>
+      </div>
+
+      <div class="stage" id="stage">
+        <!-- Scène « Vêtements » : le portant -->
+        <div class="scene scene--rack" data-scene="vetements" id="scene-vetements">
+          <div class="rack" id="rack-main"></div>
+        </div>
+
+        <!-- Scène « Accessoires / Sacs / Chaussures » : l'étagère murale -->
+        <div class="scene scene--shelf" data-scene="shelf" id="scene-shelf" hidden>
+          <div class="shelf" id="shelf-main"></div>
+        </div>
+
+        <!-- Scène « Boutique » : portant + étagère côte à côte -->
+        <div class="scene scene--boutique" data-scene="boutique" id="scene-boutique" hidden>
+          <div class="rack rack--compact" id="rack-boutique"></div>
+          <div class="shelf shelf--compact" id="shelf-boutique"></div>
+        </div>
+      </div>
+
+      <p class="stage-caption" id="stage-caption" aria-live="polite">
+        <span class="stage-caption__inner">
+          <span class="stage-caption__hint">Glissez pour parcourir · Cliquez pour découvrir</span>
+        </span>
+      </p>
+      <div class="hero__floor" aria-hidden="true"></div>
+    </section>
+
+    <!-- ===================== ESSAYEZ LE LOOK ===================== -->
+    <section class="lookbook" id="looks" aria-labelledby="lookbook-title">
+      <div class="lookbook__head">
+        <p class="eyebrow">Lookbook</p>
+        <h2 class="section-title" id="lookbook-title">Essayez le look.</h2>
+        <p class="lookbook__help">Survolez ou touchez une silhouette pour voir les pièces qu'elle porte, puis ajoutez-les au panier en un geste.</p>
+      </div>
+      <div class="lookbook__body">
+        <div class="lookbook__viewport" id="lookbook-viewport">
+          <ul class="lookbook__row" id="lookbook-row" aria-label="Silhouettes"></ul>
+        </div>
+        <aside class="lookpanel" id="lookpanel" aria-live="polite" aria-labelledby="lookpanel-title">
+          <p class="eyebrow">Dans ce look</p>
+          <h3 class="lookpanel__title" id="lookpanel-title"></h3>
+          <ul class="lookpanel__list" id="lookpanel-list"></ul>
+          <div class="lookpanel__foot">
+            <p class="lookpanel__total"><span>Le look complet</span><strong id="lookpanel-total"></strong></p>
+            <button class="btn btn--outline btn--block" id="lookpanel-all" type="button">Ajouter tout le look</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== PIED DE PAGE ===================== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <a class="footer__brand" href="#boutique">
+        <img src="assets/logo/embleme-blanc.svg" alt="" width="24" height="26" loading="lazy">NOMA HERITAGE
+      </a>
+      <ul class="footer__links">
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener" id="link-instagram">Instagram</a></li>
+        <li><a href="https://www.tiktok.com/@nomaheritage4" target="_blank" rel="noopener" id="link-tiktok">TikTok</a></li>
+        <li><a href="#" target="_blank" rel="noopener" id="link-whatsapp">WhatsApp</a></li>
+      </ul>
+      <p class="footer__copy">© <span id="year">2026</span> Noma Heritage</p>
+    </div>
+  </footer>
+
+  <!-- ===================== NAVIGATION CATÉGORIES (pilule) ===================== -->
+  <nav class="catnav" id="catnav" aria-label="Catégories">
+    <div class="catnav__track" role="tablist" aria-label="Changer de rayon">
+      <span class="catnav__indicator" id="catnav-indicator" aria-hidden="true"></span>
+      <button class="catnav__tab" type="button" role="tab" data-cat="boutique" aria-selected="false" aria-controls="stage">Boutique</button>
+      <button class="catnav__tab" type="button" role="tab" data-cat="vetements" aria-selected="true" aria-controls="stage">Vêtements</button>
+      <button class="catnav__tab" type="button" role="tab" data-cat="accessoires" aria-selected="false" aria-controls="stage">Accessoires</button>
+      <button class="catnav__tab" type="button" role="tab" data-cat="sacs" aria-selected="false" aria-controls="stage">Sacs</button>
+      <button class="catnav__tab" type="button" role="tab" data-cat="chaussures" aria-selected="false" aria-controls="stage">Chaussures</button>
+    </div>
+  </nav>
+
+  <!-- ===================== VUE PRODUIT ===================== -->
+  <div class="pv" id="product-view" role="dialog" aria-modal="true" aria-labelledby="pv-name" hidden>
+    <div class="pv__veil" id="pv-veil"></div>
+    <div class="pv__layout">
+      <div class="pv__figwrap" id="pv-figwrap">
+        <div class="pv__fig" id="pv-fig"></div>
+      </div>
+      <aside class="pv__panel" id="pv-panel">
+        <div class="pv__grab" id="pv-grab" aria-hidden="true"><span></span></div>
+        <div class="pv__panel-inner" id="pv-panel-inner">
+          <p class="eyebrow pv__cat" id="pv-cat"></p>
+          <h2 class="pv__name" id="pv-name"></h2>
+          <p class="pv__price" id="pv-price"></p>
+
+          <div class="pv__row">
+            <p class="pv__label">Couleur <span class="pv__label-value" id="pv-color-name"></span></p>
+            <div class="swatches" id="pv-swatches" role="group" aria-label="Couleurs"></div>
+          </div>
+
+          <div class="pv__row" id="pv-side-row">
+            <p class="pv__label">Vue</p>
+            <div class="segmented" id="pv-sides" role="group" aria-label="Face ou dos"></div>
+          </div>
+
+          <div class="pv__row">
+            <p class="pv__label">Taille <span class="pv__hint" id="pv-size-hint" aria-live="polite"></span></p>
+            <div class="sizes" id="pv-sizes" role="group" aria-label="Tailles"></div>
+          </div>
+
+          <div class="pv__row pv__row--inline">
+            <p class="pv__label">Quantité</p>
+            <div class="qty" id="pv-qty">
+              <button type="button" data-qty="-1" aria-label="Diminuer la quantité">−</button>
+              <output id="pv-qty-value" aria-live="polite">1</output>
+              <button type="button" data-qty="1" aria-label="Augmenter la quantité">+</button>
+            </div>
+          </div>
+
+          <button class="btn btn--primary btn--block btn--add" id="pv-add" type="button">
+            <span class="btn__label">Ajouter au panier</span>
+          </button>
+
+          <button class="link-subtle" id="pv-details-toggle" type="button" aria-expanded="false" aria-controls="pv-details">Voir les détails</button>
+          <div class="pv__details" id="pv-details" hidden></div>
+        </div>
+      </aside>
+    </div>
+    <button class="round-btn pv__arrow pv__arrow--prev" id="pv-prev" type="button" aria-label="Produit précédent">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="round-btn pv__arrow pv__arrow--next" id="pv-next" type="button" aria-label="Produit suivant">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <button class="round-btn pv__close" id="pv-close" type="button" aria-label="Fermer la vue produit">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <!-- ===================== PANIER (tiroir) ===================== -->
+  <div class="drawer" id="cart" role="dialog" aria-modal="true" aria-labelledby="cart-title" hidden>
+    <div class="drawer__backdrop" data-cart-close></div>
+    <aside class="drawer__panel" id="cart-panel">
+      <header class="drawer__head">
+        <h2 class="drawer__title" id="cart-title">Votre panier <span id="cart-count-label"></span></h2>
+        <button class="round-btn round-btn--sm" type="button" data-cart-close aria-label="Fermer le panier">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <ul class="drawer__items" id="cart-items"></ul>
+      <div class="drawer__empty" id="cart-empty">
+        <p class="drawer__empty-title">Votre panier est vide.</p>
+        <p>Parcourez le portant et ajoutez vos pièces préférées.</p>
+      </div>
+      <footer class="drawer__foot">
+        <p class="drawer__total"><span>Total</span><strong id="cart-total">0 FCFA</strong></p>
+        <p class="drawer__note">Pas de paiement en ligne. Vous confirmez la commande, le paiement et la livraison directement avec nous sur WhatsApp.</p>
+        <a class="btn btn--primary btn--block btn--whatsapp" id="cart-whatsapp" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5z"/><path class="fill" d="M9.2 8.6c.2-.4.5-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c.4.9 1.3 1.8 2.3 2.3l.6-.5c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3-.1.5-.4.7-.5.3-1.2.5-1.9.3-2.4-.7-4.4-2.7-5.1-5.1-.2-.7 0-1.4.3-1.9z"/></svg>
+          Commander via WhatsApp
+        </a>
+        <button class="btn btn--ghost btn--block" type="button" data-cart-close>Continuer mes achats</button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- ===================== RECHERCHE ===================== -->
+  <div class="search" id="search" role="dialog" aria-modal="true" aria-label="Rechercher une pièce" hidden>
+    <div class="search__backdrop" data-search-close></div>
+    <div class="search__panel" id="search-panel">
+      <div class="search__bar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <input class="search__input" id="search-input" type="search" placeholder="Une pièce, une couleur, un rayon…" aria-label="Rechercher" autocomplete="off">
+        <button class="round-btn round-btn--sm" type="button" data-search-close aria-label="Fermer la recherche">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p class="search__status" id="search-status" aria-live="polite"></p>
+      <ul class="search__results" id="search-results"></ul>
+    </div>
+  </div>
+
+  <div class="sr-only" id="live" aria-live="polite"></div>
+  <noscript><p class="noscript">Activez JavaScript pour visiter le showroom Noma Heritage.</p></noscript>
+
+  <!-- Animations : GSAP 3 + ScrollTrigger (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Catalogue puis logique du site -->
+  <script src="js/products.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
